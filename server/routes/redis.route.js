@@ -1,6 +1,13 @@
-const router   = require('express').Router();
+module.exports = (db) => {
+  const router   = require('express').Router();
 
-//test server class routing config
-router.get('/', (req,res)=>{res.send('Hello World!')});
+  //test db connection persists
+  db.get('foo', (err, res) => {
+    console.log(res);
+  });
 
-module.exports = router;
+  //test server class routing config
+  router.get('/', (req,res)=>{res.send('Hello World!')});
+
+  return router;
+}

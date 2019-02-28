@@ -11,8 +11,12 @@ const express     = require('express'),
       socketio    = require('socket.io');
 
 // remember to install redis-server and run
-const redisRoute  = require('./server/routes/redis.route'),
-      redisDB     = require('./server/db/redis.connect').connect();
+const redisDB     = require('./server/db/redis.connect').connect();
+
+// test data
+// redisDB.set('foo','bar');
+
+const redisRoute  = require('./server/routes/redis.route')(redisDB);
 
 class Server{
   constructor() {
