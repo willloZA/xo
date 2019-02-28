@@ -16,7 +16,7 @@ const redisDB     = require('./server/db/redis.connect').connect();
 // test data
 // redisDB.set('foo','bar');
 
-const redisRoute  = require('./server/routes/redis.route')(redisDB);
+const redisRoute  = require('./server/routes/redis.route');
 
 class Server{
   constructor() {
@@ -25,21 +25,20 @@ class Server{
 
     this.app    = express();
     this.http   = http.Server(this.app);
-    this.socket = socketio(this.http);
+    this.io     = socketio(this.http);
   }
 
   appConfig() {
+    //bodyParser and cors setup
     this.app.use(bodyParser.json());
     this.app.use(cors());
-  }
 
-  applyRoutes() {
-    this.app.use(redisRoute);
+    //redis route requires redisDB client as param
+    this.app.use(redisRoute(redisDB));
   }
 
   appStart() {
     this.appConfig();
-    this.applyRoutes();
 
     this.http.listen(this.port, this.host, () => {
       console.log(`Listening on http://${this.host}:${this.port}`);
