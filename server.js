@@ -33,12 +33,15 @@ class Server{
     this.app.use(bodyParser.json());
     this.app.use(cors());
 
+    this.app.use(express.static(__dirname + "/app"));
     //redis route requires redisDB client as param
     this.app.use(redisRoute(redisDB));
   }
 
   appStart() {
     this.appConfig();
+
+    require('./server/socket/socket.controller')(this.io, redisDB);
 
     this.http.listen(this.port, this.host, () => {
       console.log(`Listening on http://${this.host}:${this.port}`);
