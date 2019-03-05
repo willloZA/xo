@@ -53,7 +53,14 @@ module.exports = (_io, db) => {
     console.log(socket.id + ' connected!');
     redisDB.incr('totalPlayers');
 
+    // requires move gridID, retrieve room data if exists validation of move (win/draw/continue) and store room game data in redis  
+    socket.on('sp-move', (data) => {
 
+    });
+
+    socket.on('mp-move', (data) => {
+
+    });
 
     socket.on('create-room', () => {
       // install util.promisify-all and apply to redis client
@@ -105,6 +112,7 @@ module.exports = (_io, db) => {
               symbol: ['0','X']
             });
             assignedRooms[socket.id] = id;
+            //create room data entry in redis (binary boardState, binary socketId moves)
           } else {
 
             socket.emit('alert',{ alert: `The room specified doesn't exist`});
