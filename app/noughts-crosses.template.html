@@ -5,25 +5,27 @@
       if other people viewing page offer multiplayer room
     </div>
     <div>
-      select mode, 2 player or 1 player vs AI
+      <label for="multi">Multi:</label><input type="checkbox" id="multi" ng-model="$ctrl.multiplayer">
+      <label for="rcvd">Rcvd:</label><input type="checkbox" id="rcvd" ng-model="$ctrl.rcvdMove">
+      <label for="turn">myTurn:</label><input type="checkbox" id="turn" ng-model="$ctrl.myTurn">
     </div>
   </div>
   <div>
       <table>
         <tr>
-          <td id="8" ng-click="$ctrl.updateBoard(0);"></td>
-          <td id="7" ng-click="$ctrl.updateBoard(0);" class="vert"></td>
-          <td id="6" ng-click="$ctrl.updateBoard(0);"></td>
+          <td xo id="8"></td>
+          <td xo id="7" class="vert"></td>
+          <td xo id="6"></td>
         </tr>
         <tr>
-          <td id="5" ng-click="$ctrl.updateBoard(0);" class="hori"></td>
-          <td id="4" ng-click="$ctrl.updateBoard(0);" class="vert hori"></td>
-          <td id="3" ng-click="$ctrl.updateBoard(0);" class="hori"></td>
+          <td xo id="5" class="hori"></td>
+          <td xo id="4" class="vert hori"></td>
+          <td xo id="3" class="hori"></td>
         </tr>
         <tr>
-          <td id="2" ng-click="$ctrl.updateBoard(0);"></td>
-          <td id="1" ng-click="$ctrl.updateBoard(0);" class="vert"></td>
-          <td id="0" ng-click="$ctrl.updateBoard(0);"></td>
+          <td xo id="2"></td>
+          <td xo id="1" class="vert"></td>
+          <td xo id="0"></td>
         </tr>
       </table>
   </div>

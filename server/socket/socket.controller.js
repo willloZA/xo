@@ -15,7 +15,21 @@ module.exports = (_io, db) => {
     [1,5,9], [3,5,7]
   ];
 
-  let resetRooms = () => {
+  /* Binary winning state examples
+    111 000 000
+    000 111 000
+    000 000 111
+    
+    100 010 001
+    100 010 001
+    100 010 001
+    
+    100 001
+    010 010
+    001 100*/
+
+  let resetGames = () => {
+    redisDB.set('totalPlayers',0);
     redisDB.set('totalRooms',1);
     redisDB.set('allRooms', JSON.stringify({
       emptyRooms: [1],
@@ -23,27 +37,16 @@ module.exports = (_io, db) => {
     }));
   }
 
-  let allRooms    = null,
-      totalRooms  = null;
+  let allRooms      = null,
+      totalPlayers  = null;
 
-  resetRooms();
+  resetGames();
 
   let room = 'testRoom';
 
   io.on('connection', (socket) => {
     console.log(socket.id + ' connected!');
     
-    socket.on('room', (room) => {
-      console.log(room);
-      socket.join(room);
-      io.in(room).emit('message', socket.id + ' joined ' + room);
-    });
-
-    socket.on('messageRoom', (message) => {
-      console.log(socket.id + ' sent ' + message);
-      io.in(room).emit('message', message);
-    });
-
   });
 
   return io;
