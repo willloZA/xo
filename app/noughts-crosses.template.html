@@ -1,8 +1,17 @@
 <div>
   <div>
-    game settings selection, default is 2 player on same browser.
     <div>
-      if other people viewing page offer multiplayer room
+      <div ng-if="!($ctrl.multiplayer)">
+          <div>
+              <input type="text" ng-model="$ctrl.joinRoomNum"><button type="button" ng-click="$ctrl.joinRoom();">Join Room {{ $ctrl.joinRoomNum }}</button>
+          </div>
+          <div>
+              <button type="button" ng-click="$ctrl.createRoom();">Create Room</button>
+          </div>
+      </div>
+      <div ng-if="($ctrl.multiplayer && $ctrl.mySymbol[0] === 'X')">
+        <p>Ask opponent to join room {{ $ctrl.roomNum }}</p>
+      </div>
     </div>
     <div>
       <label for="multi">Multi:</label><input type="checkbox" id="multi" ng-model="$ctrl.multiplayer">
