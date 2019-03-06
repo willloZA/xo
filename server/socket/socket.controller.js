@@ -13,9 +13,14 @@ module.exports = (_io, db) => {
         setAsync    = promisify(redisDB.set).bind(redisDB);
   
   const winCombination = [
-    [1,2,3], [4,5,6], [7,8,9],
-    [1,4,7], [2,5,8], [3,6,9],
-    [1,5,9], [3,5,7]
+    parseInt('111000000',2),
+    parseInt('000111000',2),
+    parseInt('000000111',2),
+    parseInt('100100100',2),
+    parseInt('010010010',2),
+    parseInt('001001001',2),
+    parseInt('100010001',2),
+    parseInt('001010100',2)
   ];
 
   /* Binary winning state examples
@@ -30,6 +35,14 @@ module.exports = (_io, db) => {
     100 001
     010 010
     001 100*/
+  
+  let validate = (state) => {
+    for (let idx = 0; idx < winCombination.length; idx++) {
+      if (state & winCombination[idx] === winCombination[idx]) return 'win'
+      return state;
+    }
+
+  }
 
   let resetGames = () => {
     redisDB.set('totalPlayers',0);
@@ -63,6 +76,39 @@ module.exports = (_io, db) => {
     });
 
     socket.on('mp-move', (data) => {
+      if (data.room && assignedRooms[socket.id] && data.room === assignedRooms[socket.id]) {
+        getAsync('room-'+data.room)
+          .then((str) => {
+            let roomStore = JSON.parse(str);
+            if (roomStore.players.indexOf(socket.id) === 0) {
+              roomStore[socket.id] |= data.move;
+              roomStore.boardState |= data.move;
+              let result = validate(roomStore[socket.id]);
+              result = (result != 'win') ? ((result === 511) ? 'draw' : 'cont') : result;
+              roomStore.players.reverse();
+              //change all redisDB.set to setAsync and encapsulate actions after set in then depending on resp
+              setAsync('room-'+data.room, JSON.stringify(roomStore))
+                .then((resp) => {
+                  if (resp) {
+                    //if winning move update room boards and announce winner
+                    if (result === 'win') {
+                      socket.to('room-'+data.room).emit('lose',data);
+                      socket.emit(result);
+                    } else {
+                      socket.to('room-'+data.room).emit(result,data);
+                      socket.emit(result);
+                    }
+                  } else {
+                    console.alert('redis setAsync failed')
+                    socket.emit('alert',{ alert: 'issue with server'});
+                  }
+                });
+            }
+          });
+
+      } else {
+        socket.emit('alert',{ alert: 'incorrect room specified'});
+      }
 
     });
 
@@ -138,8 +184,8 @@ module.exports = (_io, db) => {
     });
 
     socket.on('leave-room', () => {
-      let roomId = 'room-'+assignedRooms[socket.id],
-          id     = assignedRooms[socket.id];
+      let id     = assignedRooms[socket.id],
+          roomId = 'room-'+id;
       delete assignedRooms[socket.id];
       socket.leave(roomId);
       getAsync('allRooms')

@@ -1,3 +1,5 @@
+//refactor directive to inherit required values into an isolate scope (currently pulling from $scope.$ctrl) and refactor logic into either it's on controller or the parent controller
+
 function xo () {
   return {
       restrict: 'A',

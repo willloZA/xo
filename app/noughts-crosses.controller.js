@@ -1,4 +1,4 @@
-function noughtsAndCrossesController ($rootScope, $window, socket) {
+function noughtsAndCrossesController ($scope, $window, socket) {
   let ctrl = this;
   //binary record of players moves
   function reset() {
@@ -28,6 +28,28 @@ function noughtsAndCrossesController ($rootScope, $window, socket) {
     if (ctrl.mySymbol[0] === 'X') ctrl.myTurn = true;
     ctrl.mpGame = true;
     console.log('game started!');
+  });
+
+  socket.on('cont', function(update) {
+    if (update && !ctrl.myTurn) {
+      angular.element(document.getElementById(update.move)).triggerHandler('click');
+    }
+    ctrl.myTurn = !ctrl.myTurn;
+  });
+
+  socket.on('draw', function(update) {
+
+  });
+
+  socket.on('win', function() {
+    console.log('winner');
+
+  });
+
+  socket.on('lose', function(update) {
+    angular.element(document.getElementById(update.move)).triggerHandler('click');
+    console.log('loser');
+
   });
 
   socket.on('joined-room', function (d) {
@@ -63,9 +85,8 @@ function noughtsAndCrossesController ($rootScope, $window, socket) {
     let moveObj = {
       room: ctrl.roomNum,
       move: id
-    }
-    console.log(moveObj);
-    // socket.emit('mp-move',)
+    };
+    socket.emit('mp-move', moveObj)
     ctrl.myTurn = !ctrl.myTurn;
   };
 
