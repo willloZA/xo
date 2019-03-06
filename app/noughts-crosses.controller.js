@@ -1,15 +1,16 @@
-function noughtsAndCrossesController ($rootScope, socket) {
+function noughtsAndCrossesController ($rootScope, $window, socket) {
   let ctrl = this;
   //binary record of players moves
   function reset() {
     ctrl.mySymbol       = ['X','0'];
-    ctrl.remainingBoard = [0,1,2,3,4,5,6,7,8]
+    ctrl.remainingBoard = [1,2,4,8,16,32,64,128,256]
     ctrl.playerBoard    = 0;
     ctrl.joinRoomNum    = null;
     ctrl.createRoomNum  = null;
     ctrl.roomNum        = null;
-    ctrl.multiplayer    = false;
     ctrl.myTurn         = true;
+    ctrl.multiplayer    = false;
+    ctrl.mpGame         = false;
     ctrl.rcvdMove       = false;
   }
 
@@ -22,13 +23,19 @@ function noughtsAndCrossesController ($rootScope, socket) {
 
   }
 
+  socket.on('game-start', () => {
+    // X first turn 0 second turn
+    if (ctrl.mySymbol[0] === 'X') ctrl.myTurn = true;
+    ctrl.mpGame = true;
+    console.log('game started!');
+  });
+
   socket.on('joined-room', function (d) {
     console.log(d);
     ctrl.roomNum      = d.room;
     ctrl.mySymbol     = d.symbol;
     ctrl.multiplayer  = true;
-    // X first turn 0 second turn
-    if (d.symbol[0] === '0') ctrl.myTurn = false
+    ctrl.myTurn = false;
   });
 
   socket.on('alert', function (d) {
@@ -37,10 +44,10 @@ function noughtsAndCrossesController ($rootScope, socket) {
   });
 
   socket.on('opponent-disconnected', function (d) {
-    // alert or modal alert message on opponent disconnect
-    console.log(d)
     socket.emit('leave-room');
-    reset();
+    //cheap way of resetting played directives/ look at using GameService to communicate changes between controller and directives
+    $window.alert(d.alert);
+    $window.location.reload();
   });
 
   ctrl.createRoom = () => {
@@ -53,6 +60,12 @@ function noughtsAndCrossesController ($rootScope, socket) {
 
   ctrl.mpMoveEmit = (id) => {
     console.log('mp : ' + id);
+    let moveObj = {
+      room: ctrl.roomNum,
+      move: id
+    }
+    console.log(moveObj);
+    // socket.emit('mp-move',)
     ctrl.myTurn = !ctrl.myTurn;
   };
 

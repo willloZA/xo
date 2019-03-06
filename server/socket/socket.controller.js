@@ -46,7 +46,11 @@ module.exports = (_io, db) => {
   let totalRooms    = null,
       availRooms    = null,
       totalPlayers  = null; */
-  let assignedRooms = {};
+  let assignedRooms = {},
+      roomStoreTemp = {
+                        players: [],
+                        boardState: 0
+                      };
 
 
   io.on('connection', (socket) => {
@@ -89,6 +93,11 @@ module.exports = (_io, db) => {
               symbol: ['X','0']
             });
             assignedRooms[socket.id] = id;
+            //create room data entry in redis (binary boardState, binary socketId moves, players array of socketIds)
+            let roomStore = roomStoreTemp;
+            roomStore.players.push(socket.id);
+            roomStore[socket.id] = 0;
+            redisDB.set('room-'+id, JSON.stringify(roomStore));
           } else {
             socket.emit('alert',{ alert: 'The maximum number of existing rooms has been reached'});
           }
@@ -112,7 +121,15 @@ module.exports = (_io, db) => {
               symbol: ['0','X']
             });
             assignedRooms[socket.id] = id;
-            //create room data entry in redis (binary boardState, binary socketId moves)
+            //update room data entry in redis before initiating game
+            getAsync('room-'+id)
+              .then((str) => {
+                let roomStore = JSON.parse(str);
+                roomStore.players.push(socket.id);
+                roomStore[socket.id] = 0;
+                redisDB.set('room-'+id, JSON.stringify(roomStore));
+                io.to('room-'+id).emit('game-start');
+              });
           } else {
 
             socket.emit('alert',{ alert: `The room specified doesn't exist`});
@@ -121,8 +138,8 @@ module.exports = (_io, db) => {
     });
 
     socket.on('leave-room', () => {
-      let roomId = 'room-'+assignedRooms[socket.id];
-      let id     = assignedRooms[socket.id];
+      let roomId = 'room-'+assignedRooms[socket.id],
+          id     = assignedRooms[socket.id];
       delete assignedRooms[socket.id];
       socket.leave(roomId);
       getAsync('allRooms')
@@ -130,6 +147,7 @@ module.exports = (_io, db) => {
           let rooms = JSON.parse(str);
           rooms.fullRooms.splice(rooms.fullRooms.indexOf(id), 1);
           redisDB.set('allRooms', JSON.stringify(rooms));
+          redisDB.del(roomId);
         });
     });
 
@@ -139,6 +157,7 @@ module.exports = (_io, db) => {
         let roomId = 'room-'+assignedRooms[socket.id];
         delete assignedRooms[socket.id];
         io.to(roomId).emit('opponent-disconnected',{ alert: `Your opponent has disconnected`});
+
       }
       redisDB.decr('totalPlayers');
     });

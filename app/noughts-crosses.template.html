@@ -2,15 +2,23 @@
   <div>
     <div>
       <div ng-if="!($ctrl.multiplayer)">
-          <div>
-              <input type="text" ng-model="$ctrl.joinRoomNum"><button type="button" ng-click="$ctrl.joinRoom();">Join Room {{ $ctrl.joinRoomNum }}</button>
-          </div>
-          <div>
-              <button type="button" ng-click="$ctrl.createRoom();">Create Room</button>
-          </div>
+        <div>
+          <input type="text" ng-model="$ctrl.joinRoomNum"><button type="button" ng-click="$ctrl.joinRoom();">Join Room {{ $ctrl.joinRoomNum }}</button>
+        </div>
+        <div>
+          <button type="button" ng-click="$ctrl.createRoom();">Create Room</button>
+        </div>
       </div>
-      <div ng-if="($ctrl.multiplayer && $ctrl.mySymbol[0] === 'X')">
-        <p>Ask opponent to join room {{ $ctrl.roomNum }}</p>
+      <div ng-if="$ctrl.multiplayer">
+        <div ng-if="($ctrl.mySymbol[0] === 'X' && !$ctrl.mpGame)">
+          <p>Ask opponent to join room {{ $ctrl.roomNum }}</p>
+        </div>
+        <div ng-if="($ctrl.myTurn && $ctrl.mpGame)">
+          <p>Your turn</p>
+        </div>
+        <div ng-if="(!$ctrl.myTurn && $ctrl.mpGame)">
+          <p>Opponent's turn</p>
+        </div>
       </div>
     </div>
     <div>
@@ -22,19 +30,19 @@
   <div>
       <table>
         <tr>
-          <td xo id="8"></td>
-          <td xo id="7" class="vert"></td>
-          <td xo id="6"></td>
+          <td xo id="256"></td>
+          <td xo id="128" class="vert"></td>
+          <td xo id="64"></td>
         </tr>
         <tr>
-          <td xo id="5" class="hori"></td>
-          <td xo id="4" class="vert hori"></td>
-          <td xo id="3" class="hori"></td>
+          <td xo id="32" class="hori"></td>
+          <td xo id="16" class="vert hori"></td>
+          <td xo id="8" class="hori"></td>
         </tr>
         <tr>
-          <td xo id="2"></td>
-          <td xo id="1" class="vert"></td>
-          <td xo id="0"></td>
+          <td xo id="4"></td>
+          <td xo id="2" class="vert"></td>
+          <td xo id="1"></td>
         </tr>
       </table>
   </div>
