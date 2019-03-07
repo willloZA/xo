@@ -76,6 +76,7 @@ module.exports = (_io, db) => {
     });
 
     socket.on('mp-move', (data) => {
+      console.log(data);
       if (data.room && assignedRooms[socket.id] && data.room === assignedRooms[socket.id]) {
         getAsync('room-'+data.room)
           .then((str) => {

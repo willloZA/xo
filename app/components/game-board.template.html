@@ -1,0 +1,5 @@
+<table>
+  <tr ng-repeat="row in $ctrl.grid">
+    <td ng-repeat="box in row track by $index" ng-class="$ctrl.classGrid[$parent.$index][$index]" id="[{{$parent.$index}},{{$index}}]" ng-click="$ctrl.mark($event);">{{ (box===0) ? '' : $ctrl.symbol[box-1] }}</td>
+  </tr>
+</table>

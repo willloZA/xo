@@ -1,17 +1,20 @@
-function noughtsAndCrossesController ($scope, $window, socket) {
+function noughtsAndCrossesController ($window, socket) {
   let ctrl = this;
   //binary record of players moves
   function reset() {
+    ctrl.gridState      = [[0,0,0],[0,0,0],[0,0,0]];
     ctrl.mySymbol       = ['X','0'];
-    ctrl.remainingBoard = [1,2,4,8,16,32,64,128,256]
-    ctrl.playerBoard    = 0;
+    ctrl.gridRemaining = [[0,0,0],[0,0,0],[0,0,0]];
     ctrl.joinRoomNum    = null;
-    ctrl.createRoomNum  = null;
     ctrl.roomNum        = null;
     ctrl.myTurn         = true;
-    ctrl.multiplayer    = false;
     ctrl.mpGame         = false;
+    ctrl.multiplayer    = false;
     ctrl.rcvdMove       = false;
+  }
+
+  function convGrid(arr) {
+    return parseInt(arr.slice().map((key) => key.map((key) => key === 2 ? 0 : key).join('')).join(''),2);
   }
 
   ctrl.$onInit = () => {
@@ -23,6 +26,27 @@ function noughtsAndCrossesController ($scope, $window, socket) {
 
   }
 
+  ctrl.markBoard = (id) => {
+    if (ctrl.gridRemaining[id[0]][id[1]] === 0) {
+      if (ctrl.multiplayer) {
+        if (ctrl.myTurn) {
+          ctrl.gridState[id[0]][id[1]] = 1;
+          console.log(convGrid(ctrl.gridState));
+          ctrl.myTurn = false;
+        }
+      } else {
+        if (ctrl.myTurn) {
+          ctrl.gridState[id[0]][id[1]] = 1;
+        } else {
+          ctrl.gridState[id[0]][id[1]] = 2;
+        }
+        console.log(convGrid(ctrl.gridState));
+        ctrl.gridRemaining[id[0]][id[1]] = 1
+        ctrl.myTurn = !ctrl.myTurn;
+      }
+    }
+  };
+
   socket.on('game-start', () => {
     // X first turn 0 second turn
     if (ctrl.mySymbol[0] === 'X') ctrl.myTurn = true;
@@ -32,7 +56,7 @@ function noughtsAndCrossesController ($scope, $window, socket) {
 
   socket.on('cont', function(update) {
     if (update && !ctrl.myTurn) {
-      angular.element(document.getElementById(update.move)).triggerHandler('click');
+      console.log(update);
     }
     ctrl.myTurn = !ctrl.myTurn;
   });
@@ -47,7 +71,7 @@ function noughtsAndCrossesController ($scope, $window, socket) {
   });
 
   socket.on('lose', function(update) {
-    angular.element(document.getElementById(update.move)).triggerHandler('click');
+    
     console.log('loser');
 
   });
@@ -67,9 +91,8 @@ function noughtsAndCrossesController ($scope, $window, socket) {
 
   socket.on('opponent-disconnected', function (d) {
     socket.emit('leave-room');
-    //cheap way of resetting played directives/ look at using GameService to communicate changes between controller and directives
     $window.alert(d.alert);
-    $window.location.reload();
+    reset();
   });
 
   ctrl.createRoom = () => {

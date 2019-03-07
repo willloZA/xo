@@ -27,7 +27,9 @@
       <label for="turn">myTurn:</label><input type="checkbox" id="turn" ng-model="$ctrl.myTurn">
     </div>
   </div>
-  <div>
+
+  <game-board grid="$ctrl.gridState" symbol="$ctrl.mySymbol" on-mark="$ctrl.markBoard(id);"></game-board>
+  <!-- <div>
       <table>
         <tr>
           <td xo id="256"></td>
@@ -45,5 +47,5 @@
           <td xo id="1"></td>
         </tr>
       </table>
-  </div>
+  </div> -->
 </div>

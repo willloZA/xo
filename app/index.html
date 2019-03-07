@@ -16,35 +16,13 @@
   <script src="./noughts-crosses.module.js"></script>
   <script src="./libs/socket.io.js"></script>
   <script src="./service/socket.service.js"></script>
-  <script src="./directive/xo.directive.js"></script>
   <script src="./noughts-crosses.controller.js"></script>
   <script src="./noughts-crosses.component.js"></script>
-<!--   <script>
-    let socket = io.connect();
-    
-    let room = 'testRoom';
-
-    socket.on('connect', () => {
-      console.log(`connected!, choosing room ${room}`);
-      socket.emit('room', room);
-    });
-
-    socket.on('message', (data) => {
-      console.log(`message received: ${data}`);
-    });
-  </script> -->
+  <script src="./components/game-board.component.js"></script>
 
 </head>
 
 <body ng-app='noughtsAndCrosses'>
-  <!--[if IE]>
-    <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
-  <![endif]-->
-
-  <!-- Add your site or application content here -->
-  <p>Hello world!</p>
-
-  {{ 3+5 }}
 
   <noughts-crosses-component></noughts-crosses-component>
 
