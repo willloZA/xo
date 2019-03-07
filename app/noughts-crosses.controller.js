@@ -99,7 +99,7 @@ function noughtsAndCrossesController ($window, $timeout, socket) {
       ctrl.rcvdMove = true;
       ctrl.markBoard(convBinMarkId(update.move),() => {
         ctrl.rcvdMove = false;
-        $window.alert('Cats Game');
+        $timeout(() => {$window.alert('Cats Game')});
       });
     }
     //allow reset without leaving room
@@ -115,7 +115,8 @@ function noughtsAndCrossesController ($window, $timeout, socket) {
       ctrl.rcvdMove = true;
       ctrl.markBoard(convBinMarkId(update.move),() => {
         ctrl.rcvdMove = false;
-        $window.alert('You lost');
+        console.log(ctrl.gridState);
+        $timeout(() => {$window.alert('You lost')});
       });
     }
     //allow reset without leaving room
