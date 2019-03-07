@@ -1,4 +1,4 @@
-function noughtsAndCrossesController ($window, socket) {
+function noughtsAndCrossesController ($window, $timeout, socket) {
   let ctrl = this;
   //binary record of players moves
   function reset() {
@@ -8,13 +8,38 @@ function noughtsAndCrossesController ($window, socket) {
     ctrl.joinRoomNum    = null;
     ctrl.roomNum        = null;
     ctrl.myTurn         = true;
+    ctrl.rcvdMove       = false;
     ctrl.mpGame         = false;
     ctrl.multiplayer    = false;
     ctrl.rcvdMove       = false;
   }
 
-  function convGrid(arr) {
-    return parseInt(arr.slice().map((key) => key.map((key) => key === 2 ? 0 : key).join('')).join(''),2);
+  function convMarkIdBin(id) {
+    /* passed move number returns binary conversion (in decimal)*/
+      let blankGrid = [[0,0,0],[0,0,0],[0,0,0]];
+      blankGrid[id[0]][id[1]] = 1;
+      return parseInt(blankGrid.map((key) => key.map((key) => key === 2 ? 0 : key).join('')).join(''),2);
+  }
+  
+  function convBinMarkId(data) {
+    /* passed move number converts to gridState id for markBoard*/
+    let arr = data.toString(2).split('');
+    if (arr.length <=3) {
+      let retArr = [2]
+      let diff = 3 - arr.length
+      retArr.push(arr.indexOf('1')+diff);
+      return retArr;
+    } else if (arr.length <=6) {
+      let retArr = [1]
+      let diff = 6 - arr.length
+      retArr.push(arr.indexOf('1')+diff);
+      return retArr;
+    } else if (arr.length <=9) {
+      let retArr = [0]
+      let diff = 9 - arr.length
+      retArr.push(arr.indexOf('1')+diff);
+      return retArr;
+    }
   }
 
   ctrl.$onInit = () => {
@@ -27,12 +52,17 @@ function noughtsAndCrossesController ($window, socket) {
   }
 
   ctrl.markBoard = (id) => {
+    /* Accepts gridState id in form of array with initial value indicating the moves row
+    |* and second value indicating index in that row */
     if (ctrl.gridRemaining[id[0]][id[1]] === 0) {
       if (ctrl.multiplayer) {
         if (ctrl.myTurn) {
           ctrl.gridState[id[0]][id[1]] = 1;
-          console.log(convGrid(ctrl.gridState));
+          ctrl.mpMoveEmit(convMarkIdBin(id));
           ctrl.myTurn = false;
+        } else if (ctrl.rcvdMove) {
+          ctrl.gridState[id[0]][id[1]] = 2;
+          ctrl.myTurn = true;
         }
       } else {
         if (ctrl.myTurn) {
@@ -40,7 +70,7 @@ function noughtsAndCrossesController ($window, socket) {
         } else {
           ctrl.gridState[id[0]][id[1]] = 2;
         }
-        console.log(convGrid(ctrl.gridState));
+        console.log(convGridBin(ctrl.gridState));
         ctrl.gridRemaining[id[0]][id[1]] = 1
         ctrl.myTurn = !ctrl.myTurn;
       }
@@ -56,24 +86,34 @@ function noughtsAndCrossesController ($window, socket) {
 
   socket.on('cont', function(update) {
     if (update && !ctrl.myTurn) {
-      console.log(update);
+      ctrl.rcvdMove = true;
+      ctrl.markBoard(convBinMarkId(update.move));
+      ctrl.rcvdMove = false;
     }
-    ctrl.myTurn = !ctrl.myTurn;
   });
 
   socket.on('draw', function(update) {
-
+    if (update && !ctrl.myTurn) {
+      ctrl.rcvdMove = true;
+      ctrl.markBoard(convBinMarkId(update.move));
+      ctrl.rcvdMove = false;
+    }
+    $window.alert('Cats Game');
   });
 
   socket.on('win', function() {
-    console.log('winner');
-
+    $window.alert('You won');
+    //allow reset without leaving room
   });
 
   socket.on('lose', function(update) {
-    
-    console.log('loser');
-
+    if (update && !ctrl.myTurn) {
+      ctrl.rcvdMove = true;
+      ctrl.markBoard(convBinMarkId(update.move));
+      ctrl.rcvdMove = false;
+    }
+    $window.alert('You lost');
+    //allow reset without leaving room
   });
 
   socket.on('joined-room', function (d) {

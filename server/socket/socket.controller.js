@@ -37,11 +37,16 @@ module.exports = (_io, db) => {
     001 100*/
   
   let validate = (state) => {
+    console.log('state: ' + state.toString(2) + ' or ' + state);
     for (let idx = 0; idx < winCombination.length; idx++) {
-      if (state & winCombination[idx] === winCombination[idx]) return 'win'
-      return state;
+      if ((state & winCombination[idx]) === winCombination[idx]) {
+        console.log((state & winCombination[idx]).toString(2) + ' or ' + (state & winCombination[idx]));
+        console.log(winCombination[idx].toString(2) + ' or ' + winCombination[idx]);
+        console.log((state & winCombination[idx])===winCombination[idx]);
+        return 'win'
+      }
     }
-
+    return state;
   }
 
   let resetGames = () => {
@@ -85,7 +90,7 @@ module.exports = (_io, db) => {
               roomStore[socket.id] |= data.move;
               roomStore.boardState |= data.move;
               let result = validate(roomStore[socket.id]);
-              result = (result != 'win') ? ((result === 511) ? 'draw' : 'cont') : result;
+              result = (result != 'win') ? ((roomStore.boardState === 511) ? 'draw' : 'cont') : result;
               roomStore.players.reverse();
               //change all redisDB.set to setAsync and encapsulate actions after set in then depending on resp
               setAsync('room-'+data.room, JSON.stringify(roomStore))
@@ -93,6 +98,7 @@ module.exports = (_io, db) => {
                   if (resp) {
                     //if winning move update room boards and announce winner
                     if (result === 'win') {
+                      console.log(socket.id + ' wins');
                       socket.to('room-'+data.room).emit('lose',data);
                       socket.emit(result);
                     } else {
