@@ -51,7 +51,7 @@ function noughtsAndCrossesController ($window, $timeout, socket) {
 
   }
 
-  ctrl.markBoard = (id) => {
+  ctrl.markBoard = (id,cb) => {
     /* Accepts gridState id in form of array with initial value indicating the moves row
     |* and second value indicating index in that row */
     if (ctrl.gridRemaining[id[0]][id[1]] === 0) {
@@ -75,6 +75,7 @@ function noughtsAndCrossesController ($window, $timeout, socket) {
         ctrl.myTurn = !ctrl.myTurn;
       }
     }
+    if (cb) cb();
   };
 
   socket.on('game-start', () => {
@@ -87,18 +88,21 @@ function noughtsAndCrossesController ($window, $timeout, socket) {
   socket.on('cont', function(update) {
     if (update && !ctrl.myTurn) {
       ctrl.rcvdMove = true;
-      ctrl.markBoard(convBinMarkId(update.move));
-      ctrl.rcvdMove = false;
+      ctrl.markBoard(convBinMarkId(update.move),() => {
+        ctrl.rcvdMove = false;
+      });
     }
   });
 
   socket.on('draw', function(update) {
     if (update && !ctrl.myTurn) {
       ctrl.rcvdMove = true;
-      ctrl.markBoard(convBinMarkId(update.move));
-      ctrl.rcvdMove = false;
+      ctrl.markBoard(convBinMarkId(update.move),() => {
+        ctrl.rcvdMove = false;
+        $window.alert('Cats Game');
+      });
     }
-    $window.alert('Cats Game');
+    //allow reset without leaving room
   });
 
   socket.on('win', function() {
@@ -109,10 +113,11 @@ function noughtsAndCrossesController ($window, $timeout, socket) {
   socket.on('lose', function(update) {
     if (update && !ctrl.myTurn) {
       ctrl.rcvdMove = true;
-      ctrl.markBoard(convBinMarkId(update.move));
-      ctrl.rcvdMove = false;
+      ctrl.markBoard(convBinMarkId(update.move),() => {
+        ctrl.rcvdMove = false;
+        $window.alert('You lost');
+      });
     }
-    $window.alert('You lost');
     //allow reset without leaving room
   });
 
