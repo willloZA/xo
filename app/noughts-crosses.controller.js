@@ -82,7 +82,7 @@ function noughtsAndCrossesController ($window, $timeout, socket, game) {
           }
         } else {
           let data = game.move(ctrl.mySymbol[1], id);
-          $timeout(() => {ctrl.gridState[data.move[0]][data.move[1]] = 2;});
+          ctrl.gridState[data.move[0]][data.move[1]] = 2;
           if (data.result) {
             if (data.result === 'wins') {
               $timeout(() => {$window.alert(`${ctrl.mySymbol[1]} ${data.result}!`)});

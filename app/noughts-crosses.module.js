@@ -1,4 +1,4 @@
 'use strict';
 
 angular
-  .module('noughtsAndCrosses',[]);
+  .module('noughtsAndCrosses',['ui.bootstrap']);
