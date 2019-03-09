@@ -10,7 +10,11 @@ module.exports = (_io, db) => {
         {promisify} = require('util'),
         redisDB     = db,
         getAsync    = promisify(redisDB.get).bind(redisDB),
-        setAsync    = promisify(redisDB.set).bind(redisDB);
+        setAsync    = promisify(redisDB.set).bind(redisDB),
+        delAsync    = promisify(redisDB.del).bind(redisDB),
+        saddAsync   = promisify(redisDB.sadd).bind(redisDB),
+        sremAsync   = promisify(redisDB.srem).bind(redisDB),
+        sIsMemAsync = promisify(redisDB.sismember).bind(redisDB);
   
   const winCombination = [
     parseInt('111000000',2),
@@ -37,12 +41,12 @@ module.exports = (_io, db) => {
     001 100*/
   
   let validate = (state) => {
-    console.log('state: ' + state.toString(2) + ' or ' + state);
+    // console.log('state: ' + state.toString(2) + ' or ' + state);
     for (let idx = 0; idx < winCombination.length; idx++) {
       if ((state & winCombination[idx]) === winCombination[idx]) {
-        console.log((state & winCombination[idx]).toString(2) + ' or ' + (state & winCombination[idx]));
+        /* console.log((state & winCombination[idx]).toString(2) + ' or ' + (state & winCombination[idx]));
         console.log(winCombination[idx].toString(2) + ' or ' + winCombination[idx]);
-        console.log((state & winCombination[idx])===winCombination[idx]);
+        console.log((state & winCombination[idx])===winCombination[idx]); */
         return 'win'
       }
     }
@@ -57,32 +61,27 @@ module.exports = (_io, db) => {
       fullRooms : []
     }));
   }
-
+  
   resetGames();
 
   /* Figure out if values external from connection are necessary
   let totalRooms    = null,
       availRooms    = null,
       totalPlayers  = null; */
-  let assignedRooms = {},
-      roomStoreTemp = {
-                        players: [],
-                        boardState: 0
-                      };
+  let mpAssignedRooms = {},
+      mpRoomStoreTemp = {
+                          players: [],
+                          boardState: 0
+                        };
 
 
   io.on('connection', (socket) => {
     console.log(socket.id + ' connected!');
     redisDB.incr('totalPlayers');
 
-    // requires move gridID, retrieve room data if exists validation of move (win/draw/continue) and store room game data in redis  
-    socket.on('sp-move', (data) => {
-
-    });
-
     socket.on('mp-move', (data) => {
       console.log(data);
-      if (data.room && assignedRooms[socket.id] && data.room === assignedRooms[socket.id]) {
+      if (data.room && mpAssignedRooms[socket.id] && data.room === mpAssignedRooms[socket.id]) {
         getAsync('room-'+data.room)
           .then((str) => {
             let roomStore = JSON.parse(str);
@@ -90,14 +89,13 @@ module.exports = (_io, db) => {
               roomStore[socket.id] |= data.move;
               roomStore.boardState |= data.move;
               let result = validate(roomStore[socket.id]);
-              result = (result != 'win') ? ((roomStore.boardState === 511) ? 'draw' : 'cont') : result;
+              result = (result != 'win') ? ((roomStore.boardState === 511) ? 'draw' : 'cont') : 'mp-'+result;
               roomStore.players.reverse();
-              //change all redisDB.set to setAsync and encapsulate actions after set in then depending on resp
               setAsync('room-'+data.room, JSON.stringify(roomStore))
                 .then((resp) => {
                   if (resp) {
                     //if winning move update room boards and announce winner
-                    if (result === 'win') {
+                    if (result === 'mp-win') {
                       console.log(socket.id + ' wins');
                       socket.to('room-'+data.room).emit('lose',data);
                       socket.emit(result);
@@ -120,7 +118,6 @@ module.exports = (_io, db) => {
     });
 
     socket.on('create-room', () => {
-      // install util.promisify-all and apply to redis client
       Promise.all(['totalRooms','allRooms'].map((key) => getAsync(key)))
         .then((arr) => {
           let totalRooms = parseInt(arr[0]),
@@ -138,20 +135,36 @@ module.exports = (_io, db) => {
             totalRooms++
             rooms.emptyRooms.push(id);
             redisDB.incr('totalRooms');
-            redisDB.set('allRooms', JSON.stringify(rooms));
-            console.log(socket.id+ ' joining room-'+id+' as X');
-            socket.join('room-'+id);
-            socket.emit('joined-room',{
-              room: id,
-              symbol: ['X','0']
-            });
-            assignedRooms[socket.id] = id;
-            //create room data entry in redis (binary boardState, binary socketId moves, players array of socketIds)
-            let roomStore = roomStoreTemp;
-            roomStore.players.push(socket.id);
-            roomStore[socket.id] = 0;
-            redisDB.set('room-'+id, JSON.stringify(roomStore));
+            setAsync('allRooms', JSON.stringify(rooms))
+              .then((resp) => {
+                if (resp) {
+                  //create room data entry in redis (binary boardState, binary socketId moves, players array of socketIds)
+                  let roomStore = JSON.parse(JSON.stringify(mpRoomStoreTemp));
+                  roomStore.players.push(socket.id);
+                  roomStore[socket.id] = 0;
+                  setAsync('room-'+id, JSON.stringify(roomStore))
+                  .then((resp) => {
+                    if (resp) {
+                      console.log(socket.id+ ' joining room-'+id+' as X');
+                      socket.join('room-'+id);
+                      socket.emit('joined-room',{
+                        room: id,
+                        symbol: ['X','0']
+                      });
+                      mpAssignedRooms[socket.id] = id;
+                    } else {
+                      //error
+                      console.alert('failed to set room-'+id)+' store';
+                    }
+
+                  });
+                } else {
+                  //error
+                  console.alert('failed to set allRooms');
+                }
+              });            
           } else {
+            console.log('maxed rooms');
             socket.emit('alert',{ alert: 'The maximum number of existing rooms has been reached'});
           }
         });
@@ -173,7 +186,7 @@ module.exports = (_io, db) => {
               room: id,
               symbol: ['0','X']
             });
-            assignedRooms[socket.id] = id;
+            mpAssignedRooms[socket.id] = id;
             //update room data entry in redis before initiating game
             getAsync('room-'+id)
               .then((str) => {
@@ -191,9 +204,9 @@ module.exports = (_io, db) => {
     });
 
     socket.on('leave-room', () => {
-      let id     = assignedRooms[socket.id],
+      let id     = mpAssignedRooms[socket.id],
           roomId = 'room-'+id;
-      delete assignedRooms[socket.id];
+      delete mpAssignedRooms[socket.id];
       socket.leave(roomId);
       getAsync('allRooms')
         .then((str) => {
@@ -206,11 +219,11 @@ module.exports = (_io, db) => {
 
     socket.on('disconnect', () => {
       console.log(socket.id + ' disconnected!');
-      if (assignedRooms[socket.id]) {
-        let roomId = 'room-'+assignedRooms[socket.id];
-        delete assignedRooms[socket.id];
+      if (mpAssignedRooms[socket.id]) {
+        let roomId = 'room-'+mpAssignedRooms[socket.id];
+        delete mpAssignedRooms[socket.id];
         io.to(roomId).emit('opponent-disconnected',{ alert: `Your opponent has disconnected`});
-
+        //remove sockedId from room store or if the last socketId in players array remove room store entirely and update all rooms
       }
       redisDB.decr('totalPlayers');
     });

@@ -1,4 +1,4 @@
-function noughtsAndCrossesController ($window, $timeout, socket) {
+function noughtsAndCrossesController ($window, $timeout, socket, game) {
   let ctrl = this;
   //binary record of players moves
   function reset() {
@@ -66,13 +66,36 @@ function noughtsAndCrossesController ($window, $timeout, socket) {
         }
       } else {
         if (ctrl.myTurn) {
-          ctrl.gridState[id[0]][id[1]] = 1;
+          let data = game.move(ctrl.mySymbol[0], id);
+          ctrl.gridState[data.move[0]][data.move[1]] = 1;
+          if (data.result) {
+            if (data.result === 'wins') {
+              $timeout(() => $window.alert(`${ctrl.mySymbol[0]} ${data.result}!`));
+            } else {
+              $timeout(() => $window.alert(`Cats game!`));
+            }
+            game.clear();
+            reset();
+          } else {
+            ctrl.gridRemaining[id[0]][id[1]] = 1
+            ctrl.myTurn = !ctrl.myTurn;
+          }
         } else {
-          ctrl.gridState[id[0]][id[1]] = 2;
+          let data = game.move(ctrl.mySymbol[1], id);
+          $timeout(() => {ctrl.gridState[data.move[0]][data.move[1]] = 2;});
+          if (data.result) {
+            if (data.result === 'wins') {
+              $timeout(() => {$window.alert(`${ctrl.mySymbol[1]} ${data.result}!`)});
+            } else {
+              $timeout(() => {$window.alert('Cats Game!')});
+            }
+            game.clear();
+            reset();
+          } else {
+            ctrl.gridRemaining[id[0]][id[1]] = 1
+            ctrl.myTurn = !ctrl.myTurn;
+          }
         }
-        console.log(convGridBin(ctrl.gridState));
-        ctrl.gridRemaining[id[0]][id[1]] = 1
-        ctrl.myTurn = !ctrl.myTurn;
       }
     }
     if (cb) cb();
@@ -101,12 +124,14 @@ function noughtsAndCrossesController ($window, $timeout, socket) {
         ctrl.rcvdMove = false;
         $timeout(() => {$window.alert('Cats Game')});
       });
+    } else {
+      $timeout(() => {$window.alert('Cats Game')});
     }
     //allow reset without leaving room
   });
 
-  socket.on('win', function() {
-    $window.alert('You won');
+  socket.on('mp-win', function() {
+    $timeout(() => {$window.alert('You won')});
     //allow reset without leaving room
   });
 
@@ -116,7 +141,8 @@ function noughtsAndCrossesController ($window, $timeout, socket) {
       ctrl.markBoard(convBinMarkId(update.move),() => {
         ctrl.rcvdMove = false;
         console.log(ctrl.gridState);
-        $timeout(() => {$window.alert('You lost')});
+        //window alerts should never be used (halt digest and socket comms, require timeouts to move into next digest cycle)
+        $timeout(() => {$timeout(() => {$window.alert('You lost')})});
       });
     }
     //allow reset without leaving room
@@ -158,12 +184,6 @@ function noughtsAndCrossesController ($window, $timeout, socket) {
     socket.emit('mp-move', moveObj)
     ctrl.myTurn = !ctrl.myTurn;
   };
-
-  ctrl.spMoveEmit = (id) => {
-    console.log('sp : ' + id);
-    ctrl.myTurn = !ctrl.myTurn;
-  };
-
 }
 
 angular
