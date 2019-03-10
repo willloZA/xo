@@ -26,7 +26,6 @@ let game = (socket) => {
   }
   
   let validate = (state) => {
-    if (moveStates.board === 511) return 'draw'
     for (let idx = 0; idx < winCombination.length; idx++) {
       if ((state & winCombination[idx]) === winCombination[idx]) {
         /* console.log((state & winCombination[idx]).toString(2) + ' or ' + (state & winCombination[idx]));
@@ -35,6 +34,7 @@ let game = (socket) => {
         return 'wins'
       }
     }
+    if (moveStates.board === 511) return 'draw'
     return null;
   }
 
