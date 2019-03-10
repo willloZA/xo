@@ -1,4 +1,4 @@
-function noughtsAndCrossesController ($window, $timeout, socket, game) {
+function noughtsAndCrossesController ($window, $timeout, $uibModal, socket, game) {
   let ctrl = this;
   //binary record of players moves
   function reset() {
@@ -12,6 +12,15 @@ function noughtsAndCrossesController ($window, $timeout, socket, game) {
     ctrl.mpGame         = false;
     ctrl.multiplayer    = false;
     ctrl.rcvdMove       = false;
+  }
+
+  function mpStart() {
+    ctrl.gridState = [[0,0,0],[0,0,0],[0,0,0]];
+    ctrl.gridRemaining = [[0,0,0],[0,0,0],[0,0,0]];
+    ctrl.myTurn = false;
+    if (ctrl.mySymbol[0] === 'X') ctrl.myTurn = true;
+    ctrl.multiplayer = true;
+    ctrl.mpGame = true;
   }
 
   function convMarkIdBin(id) {
@@ -46,9 +55,57 @@ function noughtsAndCrossesController ($window, $timeout, socket, game) {
     socket.on('connect', function () {
       console.log('connected!');
     });
-
     reset();
+  }
 
+  ctrl.openComponentModal = (message) => {
+
+    let comp       = 'spModalComponent',
+        resolveObj = {
+                        message: () => message
+                      };
+
+    if (ctrl.multiplayer) {
+      comp = 'mpModalComponent';
+      if (ctrl.mySymbol[0] === 'X') {
+        resolveObj.host = true;
+      }
+    }
+    
+    let modalInstance = $uibModal.open({
+      animation: false,
+      component: comp,
+      size: 'sm',
+      resolve: resolveObj
+    });
+
+    modalInstance.result.then((resp) => {
+      console.log(resp);
+      if (resp) {
+        if (resp === 'restart') {
+          socket.emit('restart');
+          mpStart();
+        } else if (resp === 'leave') {
+          $window.location.reload();
+          /* socket.emit('leave-room');
+          //replace with service call to reload any save sp game state
+          game.clear();
+          reset(); */
+        } else if ('close') {
+          mpStart();
+        }
+      } else {
+        game.clear();
+        reset();
+      }
+    }, () => {
+      console.log('modal-component dismissed at: ' + new Date());
+    });
+  };
+
+  ctrl.leaveGame = () => {
+    //temp
+    $window.location.reload();
   }
 
   ctrl.markBoard = (id,cb) => {
@@ -59,41 +116,47 @@ function noughtsAndCrossesController ($window, $timeout, socket, game) {
         if (ctrl.myTurn) {
           ctrl.gridState[id[0]][id[1]] = 1;
           ctrl.mpMoveEmit(convMarkIdBin(id));
+          ctrl.gridRemaining[id[0]][id[1]] = 1
           ctrl.myTurn = false;
         } else if (ctrl.rcvdMove) {
           ctrl.gridState[id[0]][id[1]] = 2;
+          ctrl.gridRemaining[id[0]][id[1]] = 1
           ctrl.myTurn = true;
         }
       } else {
         if (ctrl.myTurn) {
           let data = game.move(ctrl.mySymbol[0], id);
-          ctrl.gridState[data.move[0]][data.move[1]] = 1;
-          if (data.result) {
-            if (data.result === 'wins') {
-              $timeout(() => $window.alert(`${ctrl.mySymbol[0]} ${data.result}!`));
+          if (data) {
+            ctrl.gridState[data.move[0]][data.move[1]] = 1;
+            if (data.result) {
+              if (data.result === 'wins') {
+                let message = `${ctrl.mySymbol[0]} ${data.result}!`;
+                $timeout(() => {ctrl.openComponentModal(message);},150);
+              } else {
+                let message = 'Cats game!';
+                $timeout(() => {ctrl.openComponentModal(message);},150);
+              }
             } else {
-              $timeout(() => $window.alert(`Cats game!`));
+              ctrl.gridRemaining[id[0]][id[1]] = 1
+              ctrl.myTurn = !ctrl.myTurn;
             }
-            game.clear();
-            reset();
-          } else {
-            ctrl.gridRemaining[id[0]][id[1]] = 1
-            ctrl.myTurn = !ctrl.myTurn;
           }
         } else {
           let data = game.move(ctrl.mySymbol[1], id);
-          ctrl.gridState[data.move[0]][data.move[1]] = 2;
-          if (data.result) {
-            if (data.result === 'wins') {
-              $timeout(() => {$window.alert(`${ctrl.mySymbol[1]} ${data.result}!`)});
+          if (data) {
+            ctrl.gridState[data.move[0]][data.move[1]] = 2;
+            if (data.result) {
+              if (data.result === 'wins') {
+                let message = `${ctrl.mySymbol[1]} ${data.result}!`;
+                $timeout(() => {ctrl.openComponentModal(message);},150);
+              } else {
+                let message = 'Cats game!';
+                $timeout(() => {ctrl.openComponentModal(message);},150);
+              }
             } else {
-              $timeout(() => {$window.alert('Cats Game!')});
+              ctrl.gridRemaining[id[0]][id[1]] = 1;
+              ctrl.myTurn = !ctrl.myTurn;
             }
-            game.clear();
-            reset();
-          } else {
-            ctrl.gridRemaining[id[0]][id[1]] = 1
-            ctrl.myTurn = !ctrl.myTurn;
           }
         }
       }
@@ -103,14 +166,15 @@ function noughtsAndCrossesController ($window, $timeout, socket, game) {
 
   socket.on('game-start', () => {
     // X first turn 0 second turn
-    if (ctrl.mySymbol[0] === 'X') ctrl.myTurn = true;
-    ctrl.mpGame = true;
+    mpStart();
     console.log('game started!');
   });
 
   socket.on('cont', function(update) {
+    console.log(update);
     if (update && !ctrl.myTurn) {
       ctrl.rcvdMove = true;
+      console.log(convBinMarkId(update.move),ctrl.gridRemaining);
       ctrl.markBoard(convBinMarkId(update.move),() => {
         ctrl.rcvdMove = false;
       });
@@ -122,16 +186,19 @@ function noughtsAndCrossesController ($window, $timeout, socket, game) {
       ctrl.rcvdMove = true;
       ctrl.markBoard(convBinMarkId(update.move),() => {
         ctrl.rcvdMove = false;
-        $timeout(() => {$window.alert('Cats Game')});
+        let message = 'Cats Game';
+        $timeout(() => {ctrl.openComponentModal(message);},150);
       });
     } else {
-      $timeout(() => {$window.alert('Cats Game')});
+      let message = 'Cats Game';
+      $timeout(() => {ctrl.openComponentModal(message);},150);
     }
     //allow reset without leaving room
   });
 
   socket.on('mp-win', function() {
-    $timeout(() => {$window.alert('You won')});
+    let message = 'You won';
+    $timeout(() => {ctrl.openComponentModal(message);},150);
     //allow reset without leaving room
   });
 
@@ -140,9 +207,9 @@ function noughtsAndCrossesController ($window, $timeout, socket, game) {
       ctrl.rcvdMove = true;
       ctrl.markBoard(convBinMarkId(update.move),() => {
         ctrl.rcvdMove = false;
-        console.log(ctrl.gridState);
         //window alerts should never be used (halt digest and socket comms, require timeouts to move into next digest cycle)
-        $timeout(() => {$timeout(() => {$window.alert('You lost')})});
+        let message = 'You lost';
+        $timeout(() => {ctrl.openComponentModal(message);},150);
       });
     }
     //allow reset without leaving room
@@ -163,8 +230,8 @@ function noughtsAndCrossesController ($window, $timeout, socket, game) {
 
   socket.on('opponent-disconnected', function (d) {
     socket.emit('leave-room');
-    $window.alert(d.alert);
     reset();
+    $timeout(() => {ctrl.openComponentModal(d.alert);},150);
   });
 
   ctrl.createRoom = () => {

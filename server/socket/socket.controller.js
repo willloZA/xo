@@ -203,10 +203,37 @@ module.exports = (_io, db) => {
         });
     });
 
+    socket.on('restart', () => {
+      if (mpAssignedRooms[socket.id]) {
+        let id = mpAssignedRooms[socket.id],
+            roomId = 'room-'+id;
+        console.log(socket.id + ' restarting ' + roomId);
+        socket.to(roomId).emit('close-modal');
+        getAsync('room-'+id)
+          .then((str) => {
+            let roomStore = JSON.parse(str);
+            let players = roomStore.players;
+            roomStore.boardState = 0;
+            roomStore[players[0]] = 0;
+            roomStore[players[1]] = 0;
+            if (players[0] !== socket.id) {
+              roomStore.players.reverse();
+            }
+            setAsync('room-'+id, JSON.stringify(roomStore))
+              .then((resp) => {
+                if (resp) {
+                  io.to(roomId).emit('game-start');
+                }
+              });
+          });
+      }
+    });
+
     socket.on('leave-room', () => {
       let id     = mpAssignedRooms[socket.id],
           roomId = 'room-'+id;
       delete mpAssignedRooms[socket.id];
+      console.log(socket.id + ' leaving ' + roomId);
       socket.leave(roomId);
       getAsync('allRooms')
         .then((str) => {

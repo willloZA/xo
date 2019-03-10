@@ -13,6 +13,9 @@
         <div ng-if="($ctrl.mySymbol[0] === 'X' && !$ctrl.mpGame)">
           <p>Ask opponent to join room {{ $ctrl.roomNum }}</p>
         </div>
+        <div ng-if="$ctrl.mpGame">
+          <button type="button" ng-click="$ctrl.leaveGame();">Leave Game</button>
+        </div>
         <div ng-if="($ctrl.myTurn && $ctrl.mpGame)">
           <p>Your turn</p>
         </div>
@@ -22,9 +25,6 @@
       </div>
     </div>
     <div>
-      <label for="multi">Multi:</label><input type="checkbox" id="multi" ng-model="$ctrl.multiplayer">
-      <label for="rcvd">Rcvd:</label><input type="checkbox" id="rcvd" ng-model="$ctrl.rcvdMove">
-      <label for="turn">myTurn:</label><input type="checkbox" id="turn" ng-model="$ctrl.myTurn">
     </div>
   </div>
 
