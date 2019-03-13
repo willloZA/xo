@@ -79,10 +79,12 @@ module.exports = (_io, db) => {
     console.log(socket.id + ' connected!');
     redisDB.incr('totalPlayers');
 
-    getAsync('totalPlayers')
+    Promise.all(['totalPlayers','allRooms'].map((key) => getAsync(key)))
       .then((data) => {
       if (data) {
-        io.emit('player-count', data);
+        data[1] = JSON.parse(data[1]).emptyRooms;
+        io.emit('player-count', data[0]);
+        io.emit('available-rooms', data[1]);
       }
     });
 
@@ -159,6 +161,7 @@ module.exports = (_io, db) => {
                         symbol: ['X','0']
                       });
                       mpAssignedRooms[socket.id] = id;
+                      io.emit('available-rooms', rooms.emptyRooms);
                     } else {
                       //error
                       console.alert('failed to set room-'+id)+' store';
@@ -245,20 +248,54 @@ module.exports = (_io, db) => {
       getAsync('allRooms')
         .then((str) => {
           let rooms = JSON.parse(str);
-          rooms.fullRooms.splice(rooms.fullRooms.indexOf(id), 1);
+          if (rooms.fullRooms.indexOf(id) > -1) {
+            getAsync(roomId)
+              .then((roomStr) => {
+                if (roomStr) {
+                  let room = JSON.parse(roomStr);
+                  console.log(room);
+                  delete room[socket.id];
+                  setAsync(roomId, JSON.stringify(room))
+                    .then((resp) => {
+                      if (resp) {
+                        rooms.emptyRooms.push(rooms.fullRooms.splice(rooms.fullRooms.indexOf(id), 1));
+                      }
+                    });
+                }
+              });
+          } else if (rooms.emptyRooms.indexOf(id) > -1) {
+            rooms.emptyRooms.splice(rooms.fullRooms.indexOf(id), 1);
+            redisDB.del(roomId);
+          }
           redisDB.set('allRooms', JSON.stringify(rooms));
-          redisDB.del(roomId);
         });
     });
 
     socket.on('disconnect', () => {
-      console.log(socket.id + ' disconnected!');
+      console.log(socket.id + ' disconnected at ' + Date.now());
       if (mpAssignedRooms[socket.id]) {
-        let roomId = 'room-'+mpAssignedRooms[socket.id];
+        let id     = mpAssignedRooms[socket.id];
+        let roomId = 'room-'+id;
         delete mpAssignedRooms[socket.id];
-        io.to(roomId).emit('opponent-disconnected',{ alert: `Your opponent has disconnected`});
+
+        getAsync('allRooms')
+        .then((str) => {
+          let rooms = JSON.parse(str);
+          if (rooms.fullRooms.indexOf(id) > -1) {
+            rooms.emptyRooms.push(rooms.fullRooms.splice(rooms.fullRooms.indexOf(id), 1)[0]);
+            setAsync('allRooms', JSON.stringify(rooms))
+            .then((resp) => {
+              io.to(roomId).emit('opponent-disconnected',{ alert: `Your opponent has disconnected`});
+            });
+          } else if (rooms.emptyRooms.indexOf(id) > -1) {
+            rooms.emptyRooms.splice(rooms.fullRooms.indexOf(id), 1);
+            delAsync(roomId);
+          }
+        });
         //remove sockedId from room store or if the last socketId in players array remove room store entirely and update all rooms
       }
+
+      
       redisDB.decr('totalPlayers');
 
       getAsync('totalPlayers')

@@ -1,6 +1,9 @@
 function noughtsAndCrossesController ($window, $timeout, $uibModal, socket, game) {
   let ctrl = this;
-  //binary record of players moves
+  
+  ctrl.multiCollapsed = true;
+  ctrl.availRooms     = [];
+
   function reset() {
     ctrl.gridState      = [[0,0,0],[0,0,0],[0,0,0]];
     ctrl.mySymbol       = ['X','0'];
@@ -13,8 +16,6 @@ function noughtsAndCrossesController ($window, $timeout, $uibModal, socket, game
     ctrl.mpGame         = false;
     ctrl.multiplayer    = false;
     ctrl.rcvdMove       = false;
-    ctrl.multiCollapsed = true;
-    ctrl.availRooms     = [];
   }
 
   function mpStart() {
@@ -67,14 +68,16 @@ function noughtsAndCrossesController ($window, $timeout, $uibModal, socket, game
         resolveObj = {
                         message: () => message
                       };
-
     if (ctrl.multiplayer) {
       comp = 'mpModalComponent';
+      if (ctrl.opDisconnect) {
+        resolveObj.disconnect = true;
+      }
       if (ctrl.mySymbol[0] === 'X') {
         resolveObj.host = true;
       }
     }
-    
+    console.log(message,comp,resolveObj);
     let modalInstance = $uibModal.open({
       animation: true,
       component: comp,
@@ -83,7 +86,6 @@ function noughtsAndCrossesController ($window, $timeout, $uibModal, socket, game
     });
 
     modalInstance.result.then((resp) => {
-      console.log(resp);
       if (resp) {
         if (resp === 'restart') {
           socket.emit('restart');
@@ -167,16 +169,17 @@ function noughtsAndCrossesController ($window, $timeout, $uibModal, socket, game
     if (cb) cb();
   };
 
+  socket.on('available-rooms', (arr) => {
+    ctrl.availRooms = arr;
+  });
+
   socket.on('player-count', (count) => {
     ctrl.players = count;
   });
 
-  socket.on('available-rooms', (arr) => {
-    console.log(arr);
-  });
-
   socket.on('game-start', () => {
     // X first turn 0 second turn
+    ctrl.waitingRoom = false;
     mpStart();
     console.log('game started!');
   });
@@ -241,16 +244,18 @@ function noughtsAndCrossesController ($window, $timeout, $uibModal, socket, game
 
   socket.on('opponent-disconnected', function (d) {
     socket.emit('leave-room');
-    reset();
+    // reset();
+    ctrl.opDisconnect = true;
     $timeout(() => {ctrl.openComponentModal(d.alert);},150);
   });
 
   ctrl.createRoom = () => {
     socket.emit('create-room');
+    ctrl.waitingRoom = true;
   };
 
-  ctrl.joinRoom = () => {
-    socket.emit('join-room', parseInt(ctrl.joinRoomNum));
+  ctrl.joinRoom = (id) => {
+    socket.emit('join-room', parseInt(id));
   };
 
   ctrl.mpMoveEmit = (id) => {

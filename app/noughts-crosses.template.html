@@ -6,8 +6,12 @@
           Clients on page: {{ $ctrl.players }}
       </div>
       <div ng-if="!($ctrl.multiplayer)">
-        <div>
-          <input type="text" ng-model="$ctrl.joinRoomNum"><button type="button" ng-click="$ctrl.joinRoom();">Join Room {{ $ctrl.joinRoomNum }}</button>
+        <div ng-if="$ctrl.availRooms.length > 0">
+          <!-- <input type="text" ng-model="$ctrl.joinRoomNum"><button type="button" ng-click="$ctrl.joinRoom();">Join Room {{ $ctrl.joinRoomNum }}</button> -->
+          Available rooms:
+          <div ng-repeat="id in $ctrl.availRooms">
+              <button type="button" class="btn btn-default" id="{{ id }}" ng-click="$ctrl.joinRoom(id);">{{ id }}</button>
+          </div>
         </div>
         <div>
           <button type="button" ng-click="$ctrl.createRoom();">Create Room</button>
@@ -17,7 +21,7 @@
         <div ng-if="($ctrl.mySymbol[0] === 'X' && !$ctrl.mpGame)">
           <p>Ask opponent to join room {{ $ctrl.roomNum }}</p>
         </div>
-        <div ng-if="$ctrl.mpGame">
+        <div ng-if="$ctrl.waitingRoom">
           <button type="button" ng-click="$ctrl.leaveGame();">Leave Game</button>
         </div>
         <div ng-if="($ctrl.myTurn && $ctrl.mpGame)">
