@@ -190,6 +190,7 @@ module.exports = (_io, db) => {
             rooms.emptyRooms.splice(rooms.emptyRooms.indexOf(id), 1);
             rooms.fullRooms.push(id);
             redisDB.set('allRooms', JSON.stringify(rooms));
+            io.emit('available-rooms', rooms.emptyRooms);
             console.log(socket.id+ ' joining room-'+id+' as 0');
             socket.join('room-'+id);
             socket.emit('joined-room',{
