@@ -1,6 +1,10 @@
 <div>
   <div>
-    <div>
+    <button type="button" class="btn btn-default" ng-click="$ctrl.multiCollapsed = !$ctrl.multiCollapsed">Multiplayer</button>
+    <div uib-collapse="$ctrl.multiCollapsed">
+      <div>
+          Clients on page: {{ $ctrl.players }}
+      </div>
       <div ng-if="!($ctrl.multiplayer)">
         <div>
           <input type="text" ng-model="$ctrl.joinRoomNum"><button type="button" ng-click="$ctrl.joinRoom();">Join Room {{ $ctrl.joinRoomNum }}</button>

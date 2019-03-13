@@ -79,6 +79,13 @@ module.exports = (_io, db) => {
     console.log(socket.id + ' connected!');
     redisDB.incr('totalPlayers');
 
+    getAsync('totalPlayers')
+      .then((data) => {
+      if (data) {
+        io.emit('player-count', data);
+      }
+    });
+
     socket.on('mp-move', (data) => {
       console.log(data);
       if (data.room && mpAssignedRooms[socket.id] && data.room === mpAssignedRooms[socket.id]) {
@@ -253,6 +260,13 @@ module.exports = (_io, db) => {
         //remove sockedId from room store or if the last socketId in players array remove room store entirely and update all rooms
       }
       redisDB.decr('totalPlayers');
+
+      getAsync('totalPlayers')
+        .then((data) => {
+        if (data) {
+          io.emit('player-count', data);
+        }
+        });
     });
   });
 

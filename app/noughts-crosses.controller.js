@@ -4,7 +4,8 @@ function noughtsAndCrossesController ($window, $timeout, $uibModal, socket, game
   function reset() {
     ctrl.gridState      = [[0,0,0],[0,0,0],[0,0,0]];
     ctrl.mySymbol       = ['X','0'];
-    ctrl.gridRemaining = [[0,0,0],[0,0,0],[0,0,0]];
+    ctrl.gridRemaining  = [[0,0,0],[0,0,0],[0,0,0]];
+    ctrl.players        = 0;
     ctrl.joinRoomNum    = null;
     ctrl.roomNum        = null;
     ctrl.myTurn         = true;
@@ -12,6 +13,8 @@ function noughtsAndCrossesController ($window, $timeout, $uibModal, socket, game
     ctrl.mpGame         = false;
     ctrl.multiplayer    = false;
     ctrl.rcvdMove       = false;
+    ctrl.multiCollapsed = true;
+    ctrl.availRooms     = [];
   }
 
   function mpStart() {
@@ -73,7 +76,7 @@ function noughtsAndCrossesController ($window, $timeout, $uibModal, socket, game
     }
     
     let modalInstance = $uibModal.open({
-      animation: false,
+      animation: true,
       component: comp,
       size: 'sm',
       resolve: resolveObj
@@ -163,6 +166,14 @@ function noughtsAndCrossesController ($window, $timeout, $uibModal, socket, game
     }
     if (cb) cb();
   };
+
+  socket.on('player-count', (count) => {
+    ctrl.players = count;
+  });
+
+  socket.on('available-rooms', (arr) => {
+    console.log(arr);
+  });
 
   socket.on('game-start', () => {
     // X first turn 0 second turn
