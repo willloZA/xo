@@ -6,6 +6,7 @@
   <div ng-if="!$ctrl.host">{{ ::$ctrl.nonHost }}</div>
 </div>
 <div class="modal-footer">
-  <button ng-if="$ctrl.host" class="btn btn-primary" type="button" ng-click="$ctrl.restart()">Restart</button>
-  <button class="btn btn-warning" type="button" ng-click="$ctrl.leave()">Leave</button>
+  <button ng-if="$ctrl.host && !$ctrl.disconnect" class="btn btn-primary" type="button" ng-click="$ctrl.restart()">Restart</button>
+  <button ng-if="!$ctrl.disconnect" class="btn btn-warning" type="button" ng-click="$ctrl.leave()">Leave</button>
+  <button ng-if="$ctrl.disconnect" class="btn btn-warning" type="button" ng-click="$ctrl.leave()">Ok</button>
 </div>

@@ -11,6 +11,9 @@ let mpModalComponent = {
 
     $ctrl.$onInit = () => {
       $ctrl.message = $ctrl.resolve.message;
+      if ($ctrl.resolve.disconnect) {
+        $ctrl.disconnect = true;
+      }
       if ($ctrl.resolve.host) {
         $ctrl.host = true;
       }
@@ -20,9 +23,8 @@ let mpModalComponent = {
       $ctrl.close({$value: 'close'});
     });
 
-    socket.on('opponent-disconnected', function (d) {
-      // socket.emit('leave-room');
-      $ctrl.close();
+    socket.on('opponent-disconnected', () => {
+      $ctrl.close({$value: 'disconnect'});
     });
 
     $ctrl.restart = () => {
