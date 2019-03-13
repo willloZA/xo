@@ -9,8 +9,10 @@
         <div ng-if="$ctrl.availRooms.length > 0">
           <!-- <input type="text" ng-model="$ctrl.joinRoomNum"><button type="button" ng-click="$ctrl.joinRoom();">Join Room {{ $ctrl.joinRoomNum }}</button> -->
           Available rooms:
-          <div ng-repeat="id in $ctrl.availRooms">
-              <button type="button" class="btn btn-default" id="{{ id }}" ng-click="$ctrl.joinRoom(id);">{{ id }}</button>
+          <div class="room-container">
+            <div class="room" ng-repeat="id in $ctrl.availRooms">
+                <button type="button" class="btn btn-default" id="{{ id }}" ng-click="$ctrl.joinRoom(id);">{{ id }}</button>
+            </div>
           </div>
         </div>
         <div>
