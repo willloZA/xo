@@ -284,14 +284,15 @@ module.exports = (_io, db) => {
           let rooms = JSON.parse(str);
           if (rooms.fullRooms.indexOf(id) > -1) {
             rooms.emptyRooms.push(rooms.fullRooms.splice(rooms.fullRooms.indexOf(id), 1)[0]);
-            setAsync('allRooms', JSON.stringify(rooms))
-            .then((resp) => {
-              io.to(roomId).emit('opponent-disconnected',{ alert: `Your opponent has disconnected`});
-            });
           } else if (rooms.emptyRooms.indexOf(id) > -1) {
             rooms.emptyRooms.splice(rooms.fullRooms.indexOf(id), 1);
             delAsync(roomId);
           }
+          setAsync('allRooms', JSON.stringify(rooms))
+            .then((resp) => {
+              io.to(roomId).emit('opponent-disconnected',{ alert: `Your opponent has disconnected`});
+              io.emit('available-rooms', rooms.emptyRooms);
+            });
         });
         //remove sockedId from room store or if the last socketId in players array remove room store entirely and update all rooms
       }
