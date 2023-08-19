@@ -260,6 +260,7 @@ module.exports = (_io, db) => {
                     .then((resp) => {
                       if (resp) {
                         rooms.emptyRooms.push(rooms.fullRooms.splice(rooms.fullRooms.indexOf(id), 1));
+                        io.emit('available-rooms', rooms.emptyRooms);
                       }
                     });
                 }
@@ -269,6 +270,7 @@ module.exports = (_io, db) => {
             redisDB.del(roomId);
           }
           redisDB.set('allRooms', JSON.stringify(rooms));
+          io.emit('available-rooms', rooms.emptyRooms);
         });
     });
 

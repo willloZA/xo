@@ -16,7 +16,8 @@
           </div>
         </div>
         <div>
-          <button type="button" ng-click="$ctrl.createRoom();">Create Room</button>
+          <button ng-if="!($ctrl.inRoom)" type="button" ng-click="$ctrl.createRoom();">Create Room</button>
+          <button ng-if="$ctrl.inRoom" type="button" ng-click="$ctrl.leaveRoom();">Leave Room</button>
         </div>
       </div>
       <div ng-if="$ctrl.multiplayer">

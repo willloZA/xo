@@ -16,6 +16,7 @@ function noughtsAndCrossesController ($window, $timeout, $uibModal, socket, game
     ctrl.mpGame         = false;
     ctrl.multiplayer    = false;
     ctrl.rcvdMove       = false;
+    ctrl.inRoom         = false;
   }
 
   function mpStart() {
@@ -25,6 +26,7 @@ function noughtsAndCrossesController ($window, $timeout, $uibModal, socket, game
     if (ctrl.mySymbol[0] === 'X') ctrl.myTurn = true;
     ctrl.multiplayer = true;
     ctrl.mpGame = true;
+    console.log('mpStart!');
   }
 
   function convMarkIdBin(id) {
@@ -110,6 +112,8 @@ function noughtsAndCrossesController ($window, $timeout, $uibModal, socket, game
 
   ctrl.leaveGame = () => {
     //temp
+    socket.emit('leave-room');
+    // reset();
     $window.location.reload();
   }
 
@@ -235,6 +239,7 @@ function noughtsAndCrossesController ($window, $timeout, $uibModal, socket, game
     ctrl.mySymbol     = d.symbol;
     ctrl.multiplayer  = true;
     ctrl.myTurn = false;
+    console.log('joinedRoom!');
   });
 
   socket.on('alert', function (d) {
@@ -252,6 +257,7 @@ function noughtsAndCrossesController ($window, $timeout, $uibModal, socket, game
   ctrl.createRoom = () => {
     socket.emit('create-room');
     ctrl.waitingRoom = true;
+    ctrl.inRoom = true;
   };
 
   ctrl.joinRoom = (id) => {

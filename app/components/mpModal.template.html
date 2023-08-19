@@ -3,7 +3,7 @@
 </div>
 <div class="modal-body" id="modal-body">
   <div ng-if="$ctrl.message">{{ ::$ctrl.message }}</div>
-  <div ng-if="!$ctrl.host">{{ ::$ctrl.nonHost }}</div>
+  <div ng-if="!($ctrl.host) && !$ctrl.disconnect">{{ ::$ctrl.nonHost }}</div>
 </div>
 <div class="modal-footer">
   <button ng-if="$ctrl.host && !$ctrl.disconnect" class="btn btn-primary" type="button" ng-click="$ctrl.restart()">Restart</button>
