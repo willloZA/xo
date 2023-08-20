@@ -275,7 +275,7 @@ module.exports = (_io, db) => {
     });
 
     socket.on('disconnect', () => {
-      console.log(socket.id + ' disconnected at ' + Date.now());
+      console.log(socket.id + ' disconnected at ' + new Date().toUTCString());
       if (mpAssignedRooms[socket.id]) {
         let id     = mpAssignedRooms[socket.id];
         let roomId = 'room-'+id;

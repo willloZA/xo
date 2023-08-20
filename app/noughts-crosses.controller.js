@@ -106,7 +106,7 @@ function noughtsAndCrossesController ($window, $timeout, $uibModal, socket, game
         reset();
       }
     }, () => {
-      console.log('modal-component dismissed at: ' + new Date());
+      console.log('modal-component dismissed at: ' + new Date().toUTCString());
     });
   };
 
