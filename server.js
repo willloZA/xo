@@ -21,7 +21,7 @@ const redisRoute  = require('./server/routes/redis.route');
 class Server{
   constructor() {
     this.port   = process.env.PORT || 8000;
-    this.host   = 'localhost';
+    this.host   = '0.0.0.0';
 
     this.app    = express();
     this.http   = http.Server(this.app);

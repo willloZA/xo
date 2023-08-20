@@ -1,0 +1,18 @@
+version: '3'
+
+services:
+  web:
+    image: "willloza/xo-node-app:1.0.0"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    environment:
+      REDIS_URL: redis://redis:6379
+    restart: unless-stopped
+
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
